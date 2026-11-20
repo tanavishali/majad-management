@@ -1,0 +1,15 @@
+{
+  "name": "order-desk",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["backend", "backend/shared", "frontend"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev:api": "npm run dev -w @order-desk/api",
+    "dev:web": "npm run dev -w @order-desk/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "seed": "npm run seed -w @order-desk/api"
+  }
+}
