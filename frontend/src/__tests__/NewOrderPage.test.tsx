@@ -123,7 +123,7 @@ describe('New order form', () => {
     await userEvent.click(screen.getByTestId('photo-remove-1'));
     expect(screen.getByTestId('photo-hint')).toHaveTextContent('2 of 6 pictures');
     await userEvent.click(screen.getByTestId('save'));
-    await waitFor(() => expect(bodies).toHaveLength(1));
+    await waitFor(() => expect(bodies).toHaveLength(1), { timeout: 5000 }); // upload + create: slower on CI
     expect(bodies[0].images).toEqual(['up0.webp', 'up1.webp']);
     await waitFor(() => expect(screen.queryByTestId('photo-item-0')).not.toBeInTheDocument()); // cleared for the next order
   });

@@ -1,8 +1,10 @@
 node_modules
 dist
 .env
-uploads
+/uploads/
+/backend/uploads/
 coverage
 
 .data
 *.log
+*.hold
