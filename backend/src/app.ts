@@ -25,7 +25,15 @@ export function createApp() {
   app.use(pinoHttp({ logger, genReqId: req => (req as any).id, quietReqLogger: true,
     autoLogging: { ignore: req => req.url === '/healthz' || req.url === '/readyz' } }));
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // images are loaded from the web origin
-  app.use(cors({ origin: env.WEB_ORIGIN, credentials: true, exposedHeaders: ['X-Request-Id', 'Content-Disposition', 'Idempotent-Replayed'] }));
+  const webOrigins = env.WEB_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean);
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin || webOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('Origin not allowed by CORS'));
+    },
+    credentials: true,
+    exposedHeaders: ['X-Request-Id', 'Content-Disposition', 'Idempotent-Replayed'],
+  }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
   app.use(mongoSanitize());

@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: majad-management-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build -w @order-desk/api
+    startCommand: npm run start -w @order-desk/api
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        sync: false
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: TRUST_PROXY
+        value: 1
+      - key: STORAGE_DRIVER
+        value: local
+      - key: UPLOAD_DIR
+        value: /tmp/orderdesk-uploads
