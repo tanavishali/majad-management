@@ -7,7 +7,7 @@ import { nextStatus, useChangeStatus, useDeleteOrder } from '../features/orders/
 import { useToast } from '../app/toast';
 import { apiError } from '../lib/errors';
 import { fileUrl, imageUrl, thumbUrl } from '../lib/files';
-import { STATUS_LABEL, fmtDayShortStr, fmtTime, karachiDateOf, money } from '../lib/format';
+import { STATUS_LABEL, addonLabels, fmtDayShortStr, fmtTime, karachiDateOf, money } from '../lib/format';
 import { Lightbox } from './Lightbox';
 import { OrderView } from './OrderView';
 
@@ -31,7 +31,7 @@ export function OrderCard({ o }: { o: OrderDTO }) {
   const next = nextStatus(o.status);
   const ph = whatsappNumber(o.customer.phone);
   const day = fmtDayShortStr(karachiDateOf(o.scheduledAt));
-  const addonTxt = o.addons.length ? ` + ${o.addons.join(', ')}` : '';
+  const addonTxt = o.addons.length ? ` + ${addonLabels(o.addons, o.balloonColor).join(', ')}` : '';
   const msg = `Hi ${o.customer.name}! Your ${o.cake} (${o.lbs} lb)${addonTxt} is booked for ${day} at ${fmtTime(o.scheduledAt)}${o.location ? ` (${o.location})` : ''}.${o.balance ? ` Balance: ${money(o.balance)}.` : ''} Thank you, Blusher Cakes 🎂`;
 
   function askDelete() {
@@ -65,7 +65,7 @@ export function OrderCard({ o }: { o: OrderDTO }) {
           {o.balance > 0 && <span className="tag due" data-testid="order-due">Due {money(o.balance)}</span>}
           {o.profit != null && <span className="tag">Profit {money(o.profit)}</span>}
           <span className={`tag ${o.status}`} data-testid="order-status">{STATUS_LABEL[o.status]}</span>
-          {o.addons.length > 0 && <div>{o.addons.map((a) => <span key={a} className="tag addon-tag">✨ {a}</span>)}</div>}
+          {o.addons.length > 0 && <div>{addonLabels(o.addons, o.balloonColor).map((a) => <span key={a} className="tag addon-tag">✨ {a}</span>)}</div>}
           {o.details && <p className="note">{o.details}</p>}
         </div>
       </div>

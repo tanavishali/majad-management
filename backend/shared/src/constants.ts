@@ -20,7 +20,8 @@ export const ORDER_SOURCES = ['whatsapp', 'instagram', 'facebook'] as const;
 export type OrderSource = (typeof ORDER_SOURCES)[number];
 export const DEFAULT_FLAVOURS = ['Chocolate', 'Red velvet', 'Vanilla', 'Pineapple', 'Black forest', 'Biscoff'];
 export const DEFAULT_LOCATIONS = ['Johar Town', 'DHA', 'Bahria Town', 'Gulberg', 'Model Town', 'Wapda Town', 'Garden Town'];
-export const DEFAULT_ADDONS = ['Balloon bouquet', 'Acrylic boxes', 'Candles', 'Toppers', 'Artificial flowers'];
+export const DEFAULT_ADDONS = ['Balloon', 'Bouquet', 'Acrylic boxes', 'Candles', 'Toppers', 'Artificial flowers'];
+export const BALLOON_COLORS = ['white', 'black', 'red'] as const;
 export const ERROR_CODES = [
   'VALIDATION_ERROR', 'BAD_ID', 'DUPLICATE', 'UNAUTHORIZED', 'FORBIDDEN', 'NOT_FOUND',
   'SLOT_CONFLICT', 'VERSION_CONFLICT', 'ACCOUNT_LOCKED', 'RATE_LIMITED', 'INTERNAL',

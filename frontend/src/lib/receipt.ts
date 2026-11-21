@@ -1,5 +1,5 @@
 import type { OrderDTO } from '@order-desk/shared';
-import { STATUS_LABEL, fmtDate, fmtTime, money } from './format';
+import { STATUS_LABEL, addonLabels, fmtDate, fmtTime, money } from './format';
 
 const SOURCE: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Facebook' };
 const CONTACT = 'tanawishalrai5271@gmail.com';
@@ -10,7 +10,7 @@ export function receiptRows(o: OrderDTO): Array<[string, string]> {
     ['Order', o.code],
     ['Cake', o.cake],
   ];
-  if (o.addons.length) rows.push(['Add-ons', o.addons.join(', ')]);
+  if (o.addons.length) rows.push(['Add-ons', addonLabels(o.addons, o.balloonColor).join(', ')]);
   rows.push(['Weight', `${o.lbs} lb`]);
   if (o.customer.name) rows.push(['Customer', o.customer.name]);
   if (o.customer.phone) rows.push(['Phone', o.customer.phone]);

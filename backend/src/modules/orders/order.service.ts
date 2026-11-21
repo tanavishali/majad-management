@@ -93,6 +93,7 @@ export const orderService = {
         orderNo,
         cake: input.cake,
         addons: input.addons,
+        balloonColor: input.balloonColor,
         customer: { name: input.customer.name, phone: normalizePhone(input.customer.phone) },
         location: input.location,
         source: input.source,
@@ -120,6 +121,7 @@ export const orderService = {
       const unset: Record<string, ''> = {};
       if (input.cake !== undefined) set.cake = input.cake;
       if (input.addons !== undefined) set.addons = input.addons;
+      if (input.balloonColor !== undefined) set.balloonColor = input.balloonColor;
       if (input.customer) set.customer = { name: input.customer.name, phone: normalizePhone(input.customer.phone) };
       if (input.location !== undefined) set.location = input.location;
       if (input.source !== undefined) set.source = input.source;

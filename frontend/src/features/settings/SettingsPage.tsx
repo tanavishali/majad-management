@@ -4,27 +4,28 @@ import { useToast } from '../../app/toast';
 import { apiError } from '../../lib/errors';
 import { useLists, useSaveLists, type ListKey } from './api';
 
-const SECTIONS: Array<{ id: ListKey; title: string; desc: string; placeholder: string }> = [
-  { id: 'flavours', title: '🎂 Cake Flavours', desc: 'Add or rename cake flavours shown on the order screen.', placeholder: 'e.g. Lotus Biscoff, Nutella…' },
-  { id: 'locations', title: '📍 Delivery Areas / Locations', desc: 'Add common towns or areas for quick selection & filtering.', placeholder: 'e.g. Johar Town, DHA, Gulberg…' },
-  { id: 'addons', title: '✨ Add-ons', desc: 'Manage extra items you offer with cakes.', placeholder: 'e.g. Balloon bouquet, Sparkler candle…' },
-];
+const SECTIONS: Record<ListKey, { title: string; desc: string; placeholder: string }> = {
+  flavours: { title: '🎂 Cake Flavours', desc: 'Add or rename cake flavours shown on the order screen.', placeholder: 'e.g. Lotus Biscoff, Nutella…' },
+  locations: { title: '📍 Delivery Areas', desc: 'Add common towns or areas for quick selection & filtering.', placeholder: 'e.g. Johar Town, DHA, Gulberg…' },
+  addons: { title: '✨ Add-ons', desc: 'Manage extra items you offer with cakes.', placeholder: 'e.g. Balloon, Bouquet, Sparkler candle…' },
+};
 
-export default function SettingsPage() {
+export default function SettingsPage({ listKey }: { listKey: ListKey }) {
   const lists = useLists();
   const save = useSaveLists();
   const toast = useToast();
   const cur: Lists = lists.data ?? { flavours: DEFAULT_FLAVOURS, locations: DEFAULT_LOCATIONS, addons: DEFAULT_ADDONS };
+  const section = SECTIONS[listKey];
 
-  const commit = (id: ListKey, items: string[]) =>
-    save.mutate({ ...cur, [id]: items }, { onError: (e) => toast(apiError(e).message, 'error') });
+  const commit = (items: string[]) =>
+    save.mutate({ ...cur, [listKey]: items }, { onError: (e) => toast(apiError(e).message, 'error') });
 
   return (
     <>
-      <h1 className="pt">Flavours, Areas & Add-ons</h1>
-      <p className="sub">Customize your quick-select buttons for new orders.</p>
+      <h1 className="pt">{section.title.replace(/^[^\s]+\s/, '')}</h1>
+      <p className="sub">Customize your {listKey === 'locations' ? 'delivery areas' : listKey} for new orders.</p>
       {lists.isLoading && <p className="sub">Loading…</p>}
-      {SECTIONS.map((s) => <Section key={s.id} {...s} items={cur[s.id]} disabled={lists.isLoading} onChange={(items) => commit(s.id, items)} />)}
+      <Section id={listKey} {...section} items={cur[listKey]} disabled={lists.isLoading} onChange={commit} />
     </>
   );
 }

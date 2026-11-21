@@ -23,6 +23,7 @@ export function toDTO(o: any, _now: Date, withImages: boolean): OrderDTO {
     code: orderCode(o.orderNo),
     cake: o.cake ?? 'Cake order',
     addons: o.addons ?? [],
+    balloonColor: o.balloonColor ?? null,
     customer: { name: o.customer?.name ?? '', phone: o.customer?.phone ?? '' },
     location: o.location ?? '',
     source: (o.source ?? '') as OrderDTO['source'],

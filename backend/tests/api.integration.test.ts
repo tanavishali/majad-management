@@ -529,13 +529,21 @@ suite('Order Desk API integration', () => {
       expect(r.status).toBe(200);
       expect(r.body.data.flavours).toContain('Red velvet');
       expect(r.body.data.locations).toContain('Johar Town');
-      expect(r.body.data.addons).toContain('Balloon bouquet');
+      expect(r.body.data.addons).toContain('Balloon');
+      expect(r.body.data.addons).toContain('Bouquet');
     });
     it('PUT replaces the lists (trimmed, de-duplicated) and GET reads them back', async () => {
       const put = await request(app).put(api('/settings')).set(bearer()).send({ flavours: [' Mango ', 'mango', 'Lotus'], locations: ['DHA'], addons: [] });
       expect(put.status).toBe(200);
       expect(put.body.data).toEqual({ flavours: ['Mango', 'Lotus'], locations: ['DHA'], addons: [] });
       expect((await get('/settings')).body.data).toEqual(put.body.data);
+    });
+    it('splits the legacy balloon bouquet add-on into separate balloon and bouquet items', async () => {
+      const put = await request(app).put(api('/settings')).set(bearer()).send({
+        flavours: [], locations: [], addons: ['Balloon bouquet', 'Candles'],
+      });
+      expect(put.status).toBe(200);
+      expect(put.body.data.addons).toEqual(['Balloon', 'Bouquet', 'Candles']);
     });
     it('rejects empty items and unknown keys; needs a token', async () => {
       const bad = await request(app).put(api('/settings')).set(bearer()).send({ flavours: [''], locations: [], addons: [] });

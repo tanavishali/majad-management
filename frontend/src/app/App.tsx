@@ -24,7 +24,10 @@ export default function App() {
             <Route path="today" element={<OrdersPage mode="today" />} />
             <Route path="orders" element={<OrdersPage mode="all" />} />
             <Route path="sales" element={<SalesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings" element={<Navigate to="/settings/flavours" replace />} />
+            <Route path="settings/flavours" element={<SettingsPage listKey="flavours" />} />
+            <Route path="settings/areas" element={<SettingsPage listKey="locations" />} />
+            <Route path="settings/addons" element={<SettingsPage listKey="addons" />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

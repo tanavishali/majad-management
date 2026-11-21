@@ -7,14 +7,14 @@ import { PhotoPicker, type PhotoItem } from '../../components/PhotoPicker';
 import { useToast } from '../../app/toast';
 import { apiError } from '../../lib/errors';
 import { imageUrl, thumbUrl } from '../../lib/files';
-import { addClockMinutes, fmtClock, fmtDayShortStr, isoToKarachi, karachiToIso, money, todayKarachi } from '../../lib/format';
+import { addClockMinutes, cap, fmtClock, fmtDayShortStr, isoToKarachi, karachiToIso, money, todayKarachi } from '../../lib/format';
 import { invalidateOrderData } from '../../lib/queryClient';
 import { useLists } from '../settings/api';
 import { createOrder, updateOrder, uploadFiles, type OrderPayload } from './api';
 import { useOrder } from './hooks';
 
 interface Form {
-  flavour: string | null; cake: string; addons: string[]; cust: string; phone: string; source: OrderPayload['source']; loc: string;
+  flavour: string | null; cake: string; addons: string[]; balloonColor: 'white' | 'black' | 'red' | ''; cust: string; phone: string; source: OrderPayload['source']; loc: string;
   date: string; time: string; lbs: string; price: string; advance: string; profit: string; details: string;
 }
 
@@ -29,12 +29,13 @@ function suggestedTime() {
 const SOURCES = ['whatsapp', 'instagram', 'facebook'] as const;
 const SOURCE_LABEL: Record<string, string> = { whatsapp: '\u{1F4AC} WhatsApp', instagram: '\u{1F4F8} Instagram', facebook: '\u{1F4D8} Facebook' };
 const blank = (date = todayKarachi(), time = suggestedTime()): Form => ({
-  flavour: null, cake: '', addons: [], cust: '', phone: '', source: '', loc: '', date, time, lbs: '2', price: '', advance: '', profit: '', details: '',
+  flavour: null, cake: '', addons: [], balloonColor: '', cust: '', phone: '', source: '', loc: '', date, time, lbs: '2', price: '', advance: '', profit: '', details: '',
 });
 const fromOrder = (o: OrderDTO): Form => {
   const { date, time } = isoToKarachi(o.scheduledAt);
   return {
-    flavour: null, cake: o.cake, addons: [...o.addons], cust: o.customer.name, phone: o.customer.phone, source: o.source ?? '', loc: o.location, date, time,
+    flavour: null, cake: o.cake, addons: o.addons.flatMap(a => a.trim().toLowerCase() === 'balloon bouquet' ? ['Balloon', 'Bouquet'] : [a]),
+    balloonColor: o.balloonColor ?? '', cust: o.customer.name, phone: o.customer.phone, source: o.source ?? '', loc: o.location, date, time,
     lbs: String(o.lbs), price: o.price == null ? '' : String(o.price), advance: o.advance ? String(o.advance) : '', profit: o.profit == null ? '' : String(o.profit), details: o.details,
   };
 };
@@ -64,6 +65,7 @@ function OrderForm({ id }: { id?: string }) {
   const [busy, setBusy] = useState(false);
   const [clash, setClash] = useState<Clash | null>(null);
   const [added, setAdded] = useState('');
+  const hasBalloon = f.addons.some(a => ['balloon', 'balloon bouquet'].includes(a.trim().toLowerCase()));
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
@@ -97,7 +99,8 @@ function OrderForm({ id }: { id?: string }) {
         setPhotos(items);
       }
       const body: OrderPayload = {
-        cake: f.cake.trim(), addons: f.addons, customer: { name: f.cust.trim(), phone: f.phone.trim() }, location: f.loc.trim(), source: f.source,
+        cake: f.cake.trim(), addons: f.addons, balloonColor: hasBalloon && f.balloonColor ? f.balloonColor : null,
+        customer: { name: f.cust.trim(), phone: f.phone.trim() }, location: f.loc.trim(), source: f.source,
         scheduledAt: at, lbs: lbsNum, price, advance, profit: whole(f.profit), details: f.details.trim(),
         images: items.map((p) => p.key!), ...(opts.force ? { force: true } : {}),
       };
@@ -134,7 +137,11 @@ function OrderForm({ id }: { id?: string }) {
     setClash(null);
     void submit({ atIso: nx });
   };
-  const toggleAddon = (a: string) => set('addons', f.addons.includes(a) ? f.addons.filter((x) => x !== a) : [...f.addons, a]);
+  const toggleAddon = (a: string) => setF((p) => {
+    const addons = p.addons.includes(a) ? p.addons.filter((x) => x !== a) : [...p.addons, a];
+    const stillHasBalloon = addons.some(x => ['balloon', 'balloon bouquet'].includes(x.trim().toLowerCase()));
+    return { ...p, addons, balloonColor: stillHasBalloon ? p.balloonColor : '' };
+  });
 
   if (id && !loaded) {
     return <div data-testid="order-loading">{existing.isError ? <div className="empty"><div>🧁</div>Could not load this order.</div> : <p className="sub">Loading…</p>}</div>;
@@ -147,7 +154,7 @@ function OrderForm({ id }: { id?: string }) {
         <section className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ marginTop: 0 }}>Cake flavour</label>
-            <Link to="/settings" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit flavours</Link>
+            <Link to="/settings/flavours" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit flavours</Link>
           </div>
           <div className="chips" data-testid="flavours">
             {[...flavours, 'Custom'].map((fl) => (
@@ -160,13 +167,27 @@ function OrderForm({ id }: { id?: string }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label>Add-ons <em>(optional)</em></label>
-            <Link to="/settings" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit add-ons</Link>
+            <Link to="/settings/addons" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit add-ons</Link>
           </div>
           <div className="chips" data-testid="addons">
             {addons.map((a) => (
               <button key={a} type="button" className={`chip addon${f.addons.includes(a) ? ' on' : ''}`} onClick={() => toggleAddon(a)}>{a}</button>
             ))}
           </div>
+          {hasBalloon && (
+            <div>
+              <label htmlFor="balloon-color">Balloon color <em>(optional)</em></label>
+              <select id="balloon-color" data-testid="balloon-color" value={f.balloonColor} onChange={(e) => {
+                const value = e.target.value;
+                set('balloonColor', value === 'white' || value === 'black' || value === 'red' ? value : '');
+              }}>
+                <option value="">No color selected</option>
+                <option value="white">White</option>
+                <option value="black">Black</option>
+                <option value="red">Red</option>
+              </select>
+            </div>
+          )}
 
           <div className="two">
             <div><label htmlFor="cust">Customer <em>(opt.)</em></label><input id="cust" data-testid="cust" autoComplete="off" value={f.cust} onChange={(e) => set('cust', e.target.value)} /></div>
@@ -183,7 +204,7 @@ function OrderForm({ id }: { id?: string }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label htmlFor="loc">Location / Area <em>(opt.)</em></label>
-            <Link to="/settings" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit areas</Link>
+            <Link to="/settings/areas" style={{ fontSize: '.8rem', color: 'var(--deep)', fontWeight: 800 }}>+ Edit areas</Link>
           </div>
           <div className="chips" data-testid="areas">
             {locations.map((l) => (
@@ -222,7 +243,7 @@ function OrderForm({ id }: { id?: string }) {
           <div>{added && <div className="toast" data-testid="added">{added}</div>}</div>
           {([
             ['Cake', f.cake.trim() || '–'],
-            ['Add-ons', f.addons.length ? f.addons.join(', ') : '–'],
+            ['Add-ons', f.addons.length ? f.addons.map(a => a.toLowerCase() === 'balloon' && f.balloonColor ? `${a} (${cap(f.balloonColor)})` : a).join(', ') : '–'],
             ['Customer', f.cust.trim() || '–'],
             ['Ordered via', f.source ? SOURCE_LABEL[f.source] : '–'],
             ['Location', f.loc.trim() || '–'],

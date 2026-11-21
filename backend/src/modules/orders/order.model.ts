@@ -7,6 +7,7 @@ const orderSchema = new Schema({
   orderNo: { type: Number, required: true },
   cake: { type: String, required: true, trim: true },
   addons: { type: [String], default: [] },
+  balloonColor: { type: String, enum: ['white', 'black', 'red'], default: null },
   customer: {
     name: { type: String, default: '', trim: true },
     phone: { type: String, default: '', trim: true },

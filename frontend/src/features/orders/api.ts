@@ -17,6 +17,7 @@ export interface OrderListParams {
 export interface OrderPayload {
   cake: string;
   addons: string[];
+  balloonColor: 'white' | 'black' | 'red' | null;
   customer: { name: string; phone: string };
   location: string;
   source: '' | 'whatsapp' | 'instagram' | 'facebook';

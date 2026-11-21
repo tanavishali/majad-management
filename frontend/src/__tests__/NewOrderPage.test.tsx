@@ -92,13 +92,33 @@ describe('New order form', () => {
     await userEvent.click(screen.getByTestId('save'));
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]).toEqual({
-      cake: 'Red velvet cake', addons: ['Candles'], customer: { name: 'Sara', phone: '0300 1234567' }, location: 'DHA', source: 'instagram',
+      cake: 'Red velvet cake', addons: ['Candles'], balloonColor: null, customer: { name: 'Sara', phone: '0300 1234567' }, location: 'DHA', source: 'instagram',
       scheduledAt: '2030-03-10T06:30:00.000Z', lbs: 3, price: 6000, advance: 2000, profit: 1500, details: 'Happy birthday', images: [],
     });
+
     expect(await screen.findByTestId('added')).toHaveTextContent('Order added at 11:30 AM');
     expect(screen.getByTestId('cake')).toHaveValue('');
     expect(screen.getByTestId('time')).toHaveValue('12:00');
     expect(screen.getByTestId('date')).toHaveValue('2030-03-10');
+  });
+
+  it('lets Balloon color be optional, saves the selected color and clears it when Balloon is removed', async () => {
+    const bodies = mockApi();
+    server.use(http.get(`${API}/settings`, () => HttpResponse.json({
+      data: { ...LISTS, addons: ['Balloon', 'Bouquet'] },
+    })));
+    render();
+    fill('cake', 'Birthday cake'); setWhen();
+    await userEvent.click(await screen.findByRole('button', { name: 'Balloon' }));
+    expect(screen.getByTestId('balloon-color')).toHaveValue('');
+    await userEvent.selectOptions(screen.getByTestId('balloon-color'), 'red');
+    await userEvent.click(screen.getByRole('button', { name: 'Balloon' }));
+    expect(screen.queryByTestId('balloon-color')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Balloon' }));
+    await userEvent.selectOptions(screen.getByTestId('balloon-color'), 'black');
+    await userEvent.click(screen.getByTestId('save'));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ addons: ['Balloon'], balloonColor: 'black' });
   });
 
   it('only cake, weight and a time are required: empty optional fields are sent as null / empty', async () => {
@@ -244,6 +264,25 @@ describe('New order form', () => {
       expect(ifMatch).toBe('3');
       expect(patch).toMatchObject({ cake: 'Biscoff cake', advance: 4000, images: ['old.webp'], location: 'Johar Town', scheduledAt: '2030-03-10T06:30:00.000Z' });
       await waitFor(() => expect(screen.getByTestId('loc')).toHaveTextContent('/orders'));
+    });
+
+    it('loads and updates a saved balloon color in edit mode', async () => {
+      mockApi();
+      const balloonOrder = { ...detail, addons: ['Balloon', 'Bouquet'], balloonColor: 'red' as const, images: [] };
+      let patch: any;
+      server.use(
+        http.get(`${API}/settings`, () => HttpResponse.json({ data: { ...LISTS, addons: ['Balloon', 'Bouquet'] } })),
+        http.get(`${API}/orders/o7`, () => HttpResponse.json({ data: balloonOrder })),
+        http.patch(`${API}/orders/o7`, async ({ request }) => {
+          patch = await request.json();
+          return HttpResponse.json({ data: balloonOrder });
+        }),
+      );
+      render('/edit/o7');
+      expect(await screen.findByTestId('balloon-color')).toHaveValue('red');
+      await userEvent.selectOptions(screen.getByTestId('balloon-color'), 'white');
+      await userEvent.click(screen.getByTestId('save'));
+      await waitFor(() => expect(patch).toMatchObject({ addons: ['Balloon', 'Bouquet'], balloonColor: 'white' }));
     });
 
     it('says so when the order was changed somewhere else (412)', async () => {

@@ -16,15 +16,24 @@ const listsDoc = new Schema({
 const ListsModel = model('Lists', listsDoc);
 const ID = 'lists';
 
+function normalizeAddons(addons: string[]) {
+  const normalized: string[] = [];
+  for (const addon of addons) {
+    if (addon.trim().toLowerCase() === 'balloon bouquet') normalized.push('Balloon', 'Bouquet');
+    else normalized.push(addon);
+  }
+  return [...new Set(normalized.map(item => item.trim()).filter(Boolean))];
+}
+
 export const settingsService = {
   /** Defaults until the shop saves its own lists. */
   async get(): Promise<Lists> {
     const d = await ListsModel.findById(ID).lean();
     if (!d) return { flavours: [...DEFAULT_FLAVOURS], locations: [...DEFAULT_LOCATIONS], addons: [...DEFAULT_ADDONS] };
-    return { flavours: d.flavours, locations: d.locations, addons: d.addons };
+    return { flavours: d.flavours, locations: d.locations, addons: normalizeAddons(d.addons) };
   },
   async put(lists: Lists): Promise<Lists> {
-    await ListsModel.updateOne({ _id: ID }, { $set: lists }, { upsert: true });
+    await ListsModel.updateOne({ _id: ID }, { $set: { ...lists, addons: normalizeAddons(lists.addons) } }, { upsert: true });
     return this.get();
   },
 };

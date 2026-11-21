@@ -69,6 +69,10 @@ export const fmtWhen = (iso: string) => `${fmtDate(iso)} at ${fmtTime(iso)}`;
 
 export const money = (n: number | undefined | null) => `Rs ${Number(n || 0).toLocaleString('en-US')}`;
 export const moneyS = (n: number) => (n < 0 ? `-${money(-n)}` : money(n));
+export const addonLabels = (addons: string[], balloonColor?: string | null) =>
+  addons.map((addon) => addon.trim().toLowerCase() === 'balloon' && balloonColor
+    ? `${addon} (${cap(balloonColor)})`
+    : addon);
 
 export const STATUS_LABEL: Record<string, string> = { pending: 'Pending', ready: 'Ready', delivered: 'Delivered', cancelled: 'Cancelled' };
 export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

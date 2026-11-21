@@ -1,4 +1,4 @@
-import type { ORDER_STATUSES, ERROR_CODES } from './constants';
+import type { ORDER_STATUSES, ERROR_CODES, BALLOON_COLORS } from './constants';
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -12,6 +12,7 @@ export interface OrderDTO {
   code: string;               // '#OD-1001' = 1000 + orderNo
   cake: string;
   addons: string[];
+  balloonColor?: (typeof BALLOON_COLORS)[number] | null;
   customer: { name: string; phone: string };
   location: string;
   source: '' | 'whatsapp' | 'instagram' | 'facebook';

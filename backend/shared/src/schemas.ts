@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  ORDER_STATUSES, STATUS_FILTERS, RANGES, SORT_FIELDS, MAX_LIMIT, DEFAULT_LIMIT, NOTIFY_BEFORE_MINUTES, SALES_PERIODS, MAX_REPORT_DAYS, MAX_IMAGES, ORDER_SOURCES,
+  ORDER_STATUSES, STATUS_FILTERS, RANGES, SORT_FIELDS, MAX_LIMIT, DEFAULT_LIMIT, NOTIFY_BEFORE_MINUTES, SALES_PERIODS, MAX_REPORT_DAYS, MAX_IMAGES, ORDER_SOURCES, BALLOON_COLORS,
 } from './constants';
 
 const rupees = z.number().int().min(0).max(100_000_000);
@@ -15,6 +15,7 @@ export const customerSchema = z.object({
 export const orderInputSchema = z.object({
   cake: z.string().trim().min(1).max(120),
   addons: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
+  balloonColor: z.enum(BALLOON_COLORS).nullable().default(null),
   customer: customerSchema.default({}),
   location: z.string().trim().max(100).default(''),
   source: z.enum(ORDER_SOURCES).or(z.literal('')).default(''),
@@ -78,7 +79,7 @@ export const salesQuerySchema = z.object({
 });
 export type SalesQuery = z.infer<typeof salesQuerySchema>;
 
-/** Quick-pick lists shown on the new-order screen (managed on the Flavours & Areas page). */
+/** Quick-pick lists shown on the new-order screen (managed on separate settings pages). */
 const listItem = z.string().trim().min(1).max(60);
 const uniqueList = z.array(listItem).max(60).transform(a => {
   const seen = new Set<string>();
