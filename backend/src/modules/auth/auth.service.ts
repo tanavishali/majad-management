@@ -86,12 +86,24 @@ export const authService = {
     await SessionModel.updateMany({ userId: u._id }, { revokedAt: new Date() }); // sign out everywhere
   },
 
-  /** Create the first admin if no user exists. Returns true when created. */
+  /** Create the first admin, or synchronize the configured credentials for the existing admin. */
   async ensureAdmin(username?: string, password?: string): Promise<boolean> {
     if (!username || !password) return false;
+    const normalizedUsername = username.toLowerCase();
+    const existing = await UserModel.findOne({ username: normalizedUsername });
+    if (existing) {
+      if (await bcrypt.compare(password, existing.passwordHash)) return false;
+      existing.passwordHash = await hashPassword(password);
+      existing.failedAttempts = 0;
+      existing.lockedUntil = undefined;
+      await existing.save();
+      await SessionModel.updateMany({ userId: existing._id, revokedAt: { $exists: false } }, { revokedAt: new Date() });
+      logger.info({ username: normalizedUsername }, 'admin password synchronized from environment');
+      return true;
+    }
     if (await UserModel.exists({})) return false;
-    await UserModel.create({ username, passwordHash: await hashPassword(password) });
-    logger.info({ username }, 'admin user created');
+    await UserModel.create({ username: normalizedUsername, passwordHash: await hashPassword(password) });
+    logger.info({ username: normalizedUsername }, 'admin user created');
     return true;
   },
 };

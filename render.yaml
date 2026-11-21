@@ -26,6 +26,4 @@ services:
       - key: TRUST_PROXY
         value: 1
       - key: STORAGE_DRIVER
-        value: local
-      - key: UPLOAD_DIR
-        value: /tmp/orderdesk-uploads
+        value: mongodb

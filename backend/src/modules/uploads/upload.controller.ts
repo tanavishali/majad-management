@@ -4,7 +4,7 @@ import { MAX_IMAGES, MAX_IMAGE_BYTES } from '@order-desk/shared';
 import { AppError } from '../../utils/AppError';
 import { sendOne } from '../../utils/response';
 import { ALLOWED_MIME, processAndStore } from './upload.service';
-import { PUBLIC_KEY_RE, getStorage, LocalStorage } from './storage';
+import { PUBLIC_KEY_RE, getStorage, LocalStorage, MongoStorage } from './storage';
 
 export const multipart = multer({
   storage: multer.memoryStorage(),
@@ -33,6 +33,11 @@ export const serveFile: RequestHandler = async (req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.type('image/webp');
     if (storage instanceof LocalStorage) return void res.sendFile(storage.localPath(key));
+    if (storage instanceof MongoStorage) {
+      const file = await storage.get(key);
+      if (!file) throw AppError.notFound('File');
+      return void res.send(file);
+    }
     res.send(await storage.get(key));
   } catch (e) { next(e); }
 };

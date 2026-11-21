@@ -15,7 +15,7 @@ const schema = z.object({
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().min(8).optional(),
   LOG_LEVEL: z.string().default('info'),
-  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  STORAGE_DRIVER: z.enum(['local', 'mongodb', 's3']).default('local'),
   UPLOAD_DIR: z.string().default('./uploads'),
   LOCKOUT_SECONDS: z.coerce.number().default(30),
   LOCKOUT_ATTEMPTS: z.coerce.number().default(5),
