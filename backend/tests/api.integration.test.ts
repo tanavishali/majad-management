@@ -441,6 +441,12 @@ suite('Order Desk API integration', () => {
   describe('upcoming reminders', () => {
     beforeEach(resetOrders);
     const inMin = (m: number) => new Date(Date.now() + m * MIN).toISOString();
+    it('returns the next five open orders even when they are outside the reminder window', async () => {
+      for (let i = 7; i >= 1; i--) await create({ scheduledAt: inMin(60 + i * 10), cake: `Cake ${i}`, force: true });
+      const r = await get('/orders/next-upcoming');
+      expect(r.body.data.map((o: Any) => o.cake)).toEqual(['Cake 1', 'Cake 2', 'Cake 3', 'Cake 4', 'Cake 5']);
+      expect(r.body.meta.total).toBe(5);
+    });
     it('lists open orders due within the window, soonest first; delivered and later ones are left out', async () => {
       await create({ scheduledAt: inMin(40), cake: 'B', force: true });
       await create({ scheduledAt: inMin(10), cake: 'A', force: true });

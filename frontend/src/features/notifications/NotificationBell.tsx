@@ -6,7 +6,7 @@ import { fmtTime, money } from '../../lib/format';
 import { desktopPermission, dueLabel, loadSeen, minutesAway, pickFresh, saveSeen, showDesktopNotification } from './reminders';
 import { useUpcoming } from './useUpcoming';
 
-/** Header bell: badge + list of orders due within 45 minutes; fires a desktop notification and a toast once per order. */
+/** Header bell: shows the next five orders and alerts once when an order is within the reminder window. */
 export function NotificationBell() {
   const { data } = useUpcoming();
   const nav = useNavigate();
@@ -25,7 +25,8 @@ export function NotificationBell() {
   useEffect(() => {
     if (!data) return;
     const t = Date.now();
-    const { fresh, next } = pickFresh(data.data, loadSeen(), t);
+    const due = data.data.filter((o) => minutesAway(o.scheduledAt, t) <= NOTIFY_BEFORE_MINUTES);
+    const { fresh, next } = pickFresh(due, loadSeen(), t);
     saveSeen(next);
     if (!fresh.length) return;
     fresh.forEach((o) => showDesktopNotification(o, t, () => openOrder(o.id)));
@@ -56,8 +57,8 @@ export function NotificationBell() {
     <div className="bellbox" ref={box}>
       <button
         type="button" className="ib bell" data-testid="notif-bell" aria-expanded={open}
-        aria-label={count ? `Notifications: ${count} order${count > 1 ? 's' : ''} due soon` : 'Notifications'}
-        title={`Orders due in the next ${NOTIFY_BEFORE_MINUTES} minutes`}
+        aria-label={count ? `Notifications: ${count} upcoming order${count > 1 ? 's' : ''}` : 'Notifications'}
+        title="Next 5 upcoming orders"
         onClick={() => setOpen((v) => !v)}
       >
         <span aria-hidden="true">🔔</span>
@@ -65,9 +66,9 @@ export function NotificationBell() {
       </button>
       {open && (
         <div role="dialog" aria-label="Upcoming orders" data-testid="notif-panel" className="bellpanel">
-          <h2>Due in the next {NOTIFY_BEFORE_MINUTES} minutes</h2>
+          <h2>Next 5 upcoming orders</h2>
           {count === 0 ? (
-            <p className="small" data-testid="notif-empty">No upcoming orders right now. You will be alerted {NOTIFY_BEFORE_MINUTES} minutes before each order.</p>
+            <p className="small" data-testid="notif-empty">No upcoming orders right now.</p>
           ) : (
             <ul>
               {orders.map((o) => (

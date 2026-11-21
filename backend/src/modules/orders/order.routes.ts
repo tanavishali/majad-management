@@ -8,6 +8,7 @@ import { orderController as c } from './order.controller';
 export const orderRoutes = Router();
 orderRoutes.use(requireAuth);
 orderRoutes.get('/', validate({ query: orderQuerySchema }), c.list);
+orderRoutes.get('/next-upcoming', c.nextUpcoming);
 orderRoutes.get('/upcoming', validate({ query: upcomingQuerySchema }), c.upcoming);
 orderRoutes.post('/check-slot', validate({ body: checkSlotSchema }), c.checkSlot);
 orderRoutes.post('/', writeLimiter, validate({ body: orderInputSchema }), c.create);

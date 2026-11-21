@@ -22,6 +22,9 @@ export const orderController = {
   upcoming: wrap(async (_req, res) => {
     res.json(await orderService.upcoming((res.locals.query as UpcomingQuery).minutes));
   }),
+  nextUpcoming: wrap(async (_req, res) => {
+    res.json(await orderService.nextUpcoming());
+  }),
   get: wrap(async (req, res) => sendOne(res, await orderService.get(String(req.params.id)))),
   create: wrap(async (req, res) => {
     const key = req.header('idempotency-key')?.trim();

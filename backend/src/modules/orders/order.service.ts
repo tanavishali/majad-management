@@ -51,6 +51,13 @@ export const orderService = {
     return { data: rows.map(r => toDTO(r, now, false)), meta: { minutes, now: now.toISOString(), total: rows.length } };
   },
 
+  /** Next five open orders, regardless of how far in the future they are. */
+  async nextUpcoming() {
+    const now = new Date();
+    const rows = await repo.upNext(now, 5);
+    return { data: rows.map(r => toDTO(r, now, false)), meta: { minutes: 0, now: now.toISOString(), total: rows.length } };
+  },
+
   /** Clashing orders (closer than the slot gap) plus the next free slot on that day. */
   async checkSlot(scheduledAt: Date, excludeId?: string): Promise<SlotCheck> {
     const rows = await repo.findSlotConflicts(scheduledAt, excludeId);
