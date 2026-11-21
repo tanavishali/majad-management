@@ -3,7 +3,7 @@ services:
     name: majad-management-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build -w @order-desk/api
+    buildCommand: npm install --include=dev && npm run build -w @order-desk/api
     startCommand: npm run start -w @order-desk/api
     healthCheckPath: /healthz
     envVars:
