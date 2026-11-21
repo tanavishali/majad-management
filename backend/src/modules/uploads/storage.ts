@@ -95,7 +95,7 @@ export class S3Storage implements StorageAdapter {
 
 let instance: StorageAdapter | undefined;
 export function getStorage(): StorageAdapter {
-  return (instance ??= env.STORAGE_DRIVER === 'mongodb'
+  return (instance ??= env.isProd || env.STORAGE_DRIVER === 'mongodb'
     ? new MongoStorage()
     : env.STORAGE_DRIVER === 's3'
       ? new S3Storage()
