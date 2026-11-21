@@ -56,8 +56,11 @@ async function main() {
     no++;
     await OrderModel.create({
       orderNo: no,
-      customer: { name: names[i % names.length], phone: '03' + p2(Math.floor(rnd() * 46)) + String(1000000 + Math.floor(rnd() * 8999999)), address: `${1 + Math.floor(rnd() * 60)}, ${areas[Math.floor(rnd() * areas.length)]}, Lahore` },
-      source: srcs[Math.floor(rnd() * 3)], scheduledAt, status, price, cost, profit: price - cost, notes: notes[Math.floor(rnd() * notes.length)],
+      cake: `Demo Cake ${i + 1}`,
+      lbs: 1 + Math.floor(rnd() * 8),
+      customer: { name: names[i % names.length], phone: '03' + p2(Math.floor(rnd() * 46)) + String(1000000 + Math.floor(rnd() * 8999999)) },
+      location: `${1 + Math.floor(rnd() * 60)}, ${areas[Math.floor(rnd() * areas.length)]}, Lahore`,
+      source: srcs[Math.floor(rnd() * 3)], scheduledAt, status, price, advance: 0, profit: price - cost, details: notes[Math.floor(rnd() * notes.length)],
       images: imgs, imageCount: imgs.length, coverThumb: imgs[0]?.thumbKey,
       deliveredAt: status === 'delivered' ? scheduledAt : undefined, cancelledAt: status === 'cancelled' ? scheduledAt : undefined,
     });
