@@ -65,7 +65,7 @@ export function drawReceipt(o: OrderDTO): HTMLCanvasElement | null {
   ctx.fillStyle = '#e8588c'; ctx.fillRect(0, 130, W, 6);
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#c2255c'; ctx.font = `700 40px ${serif}`; ctx.fillText('🎂 Blusher Cakes', W / 2, 66);
+  ctx.fillStyle = '#c2255c'; ctx.font = `700 40px ${serif}`; ctx.fillText('🎂 POS Management', W / 2, 66);
   ctx.fillStyle = '#7a4a5c'; ctx.font = `700 20px ${sans}`; ctx.fillText('ORDER RECEIPT', W / 2, 102);
 
   let y = 190;
@@ -102,7 +102,7 @@ export function drawReceipt(o: OrderDTO): HTMLCanvasElement | null {
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#c2255c'; ctx.font = `700 22px ${serif}`; ctx.fillText('Thank you for ordering! 💗', W / 2, H - 62);
-  ctx.fillStyle = '#8a6475'; ctx.font = `600 17px ${sans}`; ctx.fillText('Instagram @blushercakes', W / 2, H - 32);
+  ctx.fillStyle = '#8a6475'; ctx.font = `600 17px ${sans}`; ctx.fillText('tanawishalrai5271@gmail.com · 03067251356', W / 2, H - 32);
   return canvas;
 }
 
