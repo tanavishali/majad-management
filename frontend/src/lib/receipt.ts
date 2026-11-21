@@ -2,8 +2,9 @@ import type { OrderDTO } from '@order-desk/shared';
 import { STATUS_LABEL, fmtDate, fmtTime, money } from './format';
 
 const SOURCE: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Facebook' };
+const CONTACT = 'tanawishalrai5271@gmail.com';
 
-/** The lines printed on a receipt. Pure, so it can be tested without a canvas. */
+/** Details included on the thermal receipt. */
 export function receiptRows(o: OrderDTO): Array<[string, string]> {
   const rows: Array<[string, string]> = [
     ['Order', o.code],
@@ -19,103 +20,58 @@ export function receiptRows(o: OrderDTO): Array<[string, string]> {
   return rows;
 }
 
-export const receiptFileName = (o: OrderDTO) => `receipt-${o.code.replace('#', '')}.png`;
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+})[c]!);
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-  const lines: string[] = [];
-  let cur = '';
-  for (const word of text.split(/\s+/)) {
-    const t = cur ? `${cur} ${word}` : word;
-    if (cur && ctx.measureText(t).width > maxW) { lines.push(cur); cur = word; } else cur = t;
-  }
-  if (cur) lines.push(cur);
-  return lines.length ? lines : [''];
+/** Build a compact 80mm thermal-printer receipt document. */
+export function receiptHtml(o: OrderDTO): string {
+  const rows = receiptRows(o).map(([label, value]) =>
+    `<div class="row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`,
+  ).join('');
+  const total = o.price == null ? 'To be confirmed' : money(o.price);
+  const balance = o.price == null ? '-' : money(o.balance);
+  const details = o.details ? `<section><span>Details</span><p>${escapeHtml(o.details)}</p></section>` : '';
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>Receipt ${escapeHtml(o.code)}</title>
+<style>
+@page{size:80mm auto;margin:3mm}
+*{box-sizing:border-box}
+body{width:74mm;margin:0 auto;color:#000;font:12px/1.35 Arial,sans-serif}
+h1{text-align:center;font-size:20px;margin:0 0 2px}
+.subtitle{text-align:center;font-size:11px;margin-bottom:8px}
+.rule{border:0;border-top:1px dashed #000;margin:6px 0}
+.row{display:flex;justify-content:space-between;gap:4mm;margin:3px 0}
+.row span{flex:0 0 27mm}
+.row strong{text-align:right;overflow-wrap:anywhere}
+.money{font-size:13px;font-weight:bold}
+section{margin-top:7px}section p{margin:3px 0;overflow-wrap:anywhere}
+footer{text-align:center;margin-top:12px;font-size:10px}
+footer strong{display:block;font-size:11px;margin-bottom:2px}
+@media print{body{width:74mm}}
+</style></head><body>
+<h1>Blusher Cakes</h1><div class="subtitle">ORDER RECEIPT</div>
+<hr class="rule">${rows}<hr class="rule">
+<div class="row"><span>Total</span><strong>${escapeHtml(total)}</strong></div>
+<div class="row"><span>Advance paid</span><strong>${escapeHtml(money(o.advance))}</strong></div>
+<div class="row money"><span>Balance due</span><strong>${escapeHtml(balance)}</strong></div>
+<div class="row"><span>Status</span><strong>${escapeHtml(STATUS_LABEL[o.status] ?? o.status)}</strong></div>
+${details}<hr class="rule">
+<footer><strong>Thank you for ordering!</strong>Developed by Tech Riyawat<br>${CONTACT}</footer>
+</body></html>`;
 }
 
-/**
- * Draws the receipt on a canvas (never stored anywhere: the browser saves it as a PNG
- * on the device). Returns null when canvas drawing is not available.
- */
-export function drawReceipt(o: OrderDTO): HTMLCanvasElement | null {
-  const probe = document.createElement('canvas').getContext?.('2d');
-  if (!probe) return null;
-
-  const W = 640, PAD = 40, S = 2;
-  const rows = receiptRows(o);
-  const sans = '"Nunito", "Segoe UI", Arial, sans-serif';
-  const serif = '"Fraunces", Georgia, serif';
-
-  // measure first so the height fits the content
-  probe.font = `700 22px ${sans}`;
-  const valueW = W - PAD * 2 - 170;
-  const wrapped = rows.map(([k, v]) => [k, wrap(probe, v, valueW)] as const);
-  const detailLines = o.details ? (probe.font = `600 20px ${sans}`, wrap(probe, o.details, W - PAD * 2)) : [];
-  const rowsH = wrapped.reduce((h, [, ls]) => h + 12 + ls.length * 30, 0);
-  const H = 190 + rowsH + 40 + 3 * 44 + 30 + (detailLines.length ? 50 + detailLines.length * 28 : 0) + 120;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = W * S; canvas.height = H * S;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-  ctx.scale(S, S);
-  ctx.textBaseline = 'alphabetic';
-
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#ffeaf1'; ctx.fillRect(0, 0, W, 130);
-  ctx.fillStyle = '#e8588c'; ctx.fillRect(0, 130, W, 6);
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#c2255c'; ctx.font = `700 40px ${serif}`; ctx.fillText('🎂 Blusher Cakes', W / 2, 66);
-  ctx.fillStyle = '#7a4a5c'; ctx.font = `700 20px ${sans}`; ctx.fillText('ORDER RECEIPT', W / 2, 102);
-
-  let y = 190;
-  ctx.textAlign = 'left';
-  for (const [k, ls] of wrapped) {
-    ctx.fillStyle = '#8a6475'; ctx.font = `700 20px ${sans}`; ctx.fillText(k, PAD, y);
-    ctx.fillStyle = '#2b1620'; ctx.font = `700 22px ${sans}`;
-    ls.forEach((l, i) => { ctx.textAlign = 'right'; ctx.fillText(l, W - PAD, y + i * 30); ctx.textAlign = 'left'; });
-    y += ls.length * 30 + 12;
-    ctx.strokeStyle = '#f3c9d8'; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(PAD, y - 18); ctx.lineTo(W - PAD, y - 18); ctx.stroke(); ctx.setLineDash([]);
-  }
-
-  y += 14;
-  const money3: Array<[string, string, boolean]> = [
-    ['Total', o.price == null ? 'To be confirmed' : money(o.price), false],
-    ['Advance paid', money(o.advance), false],
-    ['Balance due', o.price == null ? '-' : money(o.balance), true],
-  ];
-  for (const [k, v, big] of money3) {
-    ctx.fillStyle = big ? '#c2255c' : '#8a6475'; ctx.font = `${big ? 800 : 700} ${big ? 26 : 21}px ${sans}`; ctx.fillText(k, PAD, y);
-    ctx.textAlign = 'right'; ctx.fillStyle = big ? '#c2255c' : '#2b1620'; ctx.fillText(v, W - PAD, y); ctx.textAlign = 'left';
-    y += 44;
-  }
-  ctx.fillStyle = '#8a6475'; ctx.font = `700 20px ${sans}`; ctx.fillText('Status', PAD, y - 6);
-  ctx.textAlign = 'right'; ctx.fillStyle = '#2b1620'; ctx.fillText(STATUS_LABEL[o.status] ?? o.status, W - PAD, y - 6); ctx.textAlign = 'left';
-  y += 24;
-
-  if (detailLines.length) {
-    ctx.fillStyle = '#8a6475'; ctx.font = `700 20px ${sans}`; ctx.fillText('Details', PAD, y);
-    y += 30;
-    ctx.fillStyle = '#2b1620'; ctx.font = `600 20px ${sans}`;
-    for (const l of detailLines) { ctx.fillText(l, PAD, y); y += 28; }
-  }
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#c2255c'; ctx.font = `700 22px ${serif}`; ctx.fillText('Thank you for ordering! 💗', W / 2, H - 62);
-  ctx.fillStyle = '#8a6475'; ctx.font = `600 16px ${sans}`; ctx.fillText('Need a POS system? Contact us: tanawishalrai5271@gmail.com · 03067251356', W / 2, H - 32);
-  return canvas;
-}
-
-/** Saves the receipt picture to the user's device (e.g. the phone's Downloads/Gallery). Returns false if it could not be made. */
-export async function downloadReceipt(o: OrderDTO): Promise<boolean> {
-  const canvas = drawReceipt(o);
-  if (!canvas) return false;
-  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
-  if (!blob) return false;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = receiptFileName(o);
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+/** Opens a print-ready thermal receipt. Returns false if the browser blocks the print window. */
+export function printReceipt(o: OrderDTO): boolean {
+  const printWindow = window.open('', '_blank', 'width=420,height=720');
+  if (!printWindow) return false;
+  printWindow.document.open();
+  printWindow.document.write(receiptHtml(o));
+  printWindow.document.close();
+  setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
+  }, 250);
   return true;
 }

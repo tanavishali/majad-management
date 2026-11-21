@@ -9,7 +9,6 @@ import { apiError } from '../../lib/errors';
 import { imageUrl, thumbUrl } from '../../lib/files';
 import { addClockMinutes, fmtClock, fmtDayShortStr, isoToKarachi, karachiToIso, money, todayKarachi } from '../../lib/format';
 import { invalidateOrderData } from '../../lib/queryClient';
-import { downloadReceipt } from '../../lib/receipt';
 import { useLists } from '../settings/api';
 import { createOrder, updateOrder, uploadFiles, type OrderPayload } from './api';
 import { useOrder } from './hooks';
@@ -115,8 +114,7 @@ function OrderForm({ id }: { id?: string }) {
       const next = blank(f.date, addClockMinutes(time, 30));
       setF(next);
       setPhotos([]);
-      const got = await downloadReceipt(saved).catch(() => false); // saved on this device only, never stored in the database
-      setAdded(`✅ Order added at ${fmtClock(time)}${got ? ' · receipt downloaded' : ''}`);
+      setAdded(`✅ Order added at ${fmtClock(time)}`);
       setTimeout(() => setAdded(''), 3500);
     } catch (e) {
       const a = apiError(e);

@@ -7,8 +7,6 @@ import { API, order, renderApp } from './utils';
 import NewOrderPage from '../features/orders/NewOrderPage';
 
 vi.mock('../lib/images', () => ({ compressImage: async (f: File) => f }));
-const receipt = vi.fn(async (_o: unknown) => true);
-vi.mock('../lib/receipt', () => ({ downloadReceipt: (o: unknown) => receipt(o) }));
 beforeAll(() => {
   URL.createObjectURL = vi.fn(() => 'blob:preview');
   URL.revokeObjectURL = vi.fn();
@@ -97,8 +95,7 @@ describe('New order form', () => {
       cake: 'Red velvet cake', addons: ['Candles'], customer: { name: 'Sara', phone: '0300 1234567' }, location: 'DHA', source: 'instagram',
       scheduledAt: '2030-03-10T06:30:00.000Z', lbs: 3, price: 6000, advance: 2000, profit: 1500, details: 'Happy birthday', images: [],
     });
-    expect(await screen.findByTestId('added')).toHaveTextContent('Order added at 11:30 AM · receipt downloaded');
-    expect(receipt).toHaveBeenCalledWith(expect.objectContaining({ code: '#OD-1001' }));
+    expect(await screen.findByTestId('added')).toHaveTextContent('Order added at 11:30 AM');
     expect(screen.getByTestId('cake')).toHaveValue('');
     expect(screen.getByTestId('time')).toHaveValue('12:00');
     expect(screen.getByTestId('date')).toHaveValue('2030-03-10');

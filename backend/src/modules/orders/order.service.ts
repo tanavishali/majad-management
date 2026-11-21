@@ -115,10 +115,6 @@ export const orderService = {
       const cur = await repo.findById(id);
       if (!cur) throw AppError.notFound('Order');
       if (ifMatch !== undefined && ifMatch !== cur.version) throw versionConflict(cur.version);
-      if (cur.status === 'delivered' && input.status && input.status !== 'delivered') {
-        throw AppError.badRequest('Delivered orders cannot be reactivated');
-      }
-
       const now = new Date();
       const set: Record<string, unknown> = {};
       const unset: Record<string, ''> = {};
@@ -154,7 +150,6 @@ export const orderService = {
       if (!cur) throw AppError.notFound('Order');
       if (ifMatch !== undefined && ifMatch !== cur.version) throw versionConflict(cur.version);
       if (cur.status === status) return toDTO(cur, new Date(), true);
-      if (cur.status === 'delivered') throw AppError.badRequest('Delivered orders cannot be reactivated');
       const now = new Date();
       const { set, unset } = statusFields(status, now);
       const updated = await repo.updateIfVersion(id, buildUpdate(set, unset), cur.version);

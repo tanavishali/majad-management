@@ -5,20 +5,20 @@ import { getOrder } from '../features/orders/api';
 import { useToast } from '../app/toast';
 import { imageUrl, thumbUrl } from '../lib/files';
 import { STATUS_LABEL, money } from '../lib/format';
-import { downloadReceipt, receiptRows } from '../lib/receipt';
+import { printReceipt, receiptRows } from '../lib/receipt';
 import { Dialog } from './Dialog';
 import { Lightbox } from './Lightbox';
 
-/** Read-only "view order" sheet: every detail, all pictures, and the receipt download. */
+/** Read-only "view order" sheet: every detail, all pictures, and a printable receipt. */
 export function OrderView({ o, onClose, onEdit, waHref }: { o: OrderDTO; onClose: () => void; onEdit: () => void; waHref?: string }) {
   const toast = useToast();
   const [zoom, setZoom] = useState(false);
   const detail = useQuery({ queryKey: ['order', o.id], queryFn: () => getOrder(o.id) });
   const images = detail.data?.images ?? [];
 
-  async function receipt() {
-    const ok = await downloadReceipt(detail.data ?? o).catch(() => false);
-    toast(ok ? 'Receipt downloaded' : 'Could not create the receipt on this device', ok ? undefined : 'error');
+  function receipt() {
+    const ok = printReceipt(detail.data ?? o);
+    if (!ok) toast('Allow pop-ups to print the receipt', 'error');
   }
 
   return (
@@ -46,7 +46,7 @@ export function OrderView({ o, onClose, onEdit, waHref }: { o: OrderDTO; onClose
       )}
 
       <div className="acts" style={{ justifyContent: 'center' }}>
-        <button type="button" data-testid="view-receipt" onClick={() => void receipt()}>🧾 Receipt</button>
+        <button type="button" data-testid="view-receipt" onClick={receipt}>🖨️ Print receipt</button>
         {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
         <button type="button" data-testid="view-edit" onClick={onEdit}>Edit</button>
         <button type="button" data-testid="view-close" onClick={onClose}>Close</button>

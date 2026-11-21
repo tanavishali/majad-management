@@ -5,10 +5,10 @@ import { http, HttpResponse } from 'msw';
 import { server } from './server';
 import { API, list, order, renderApp } from './utils';
 import OrdersPage, { pageList } from '../features/orders/OrdersPage';
-import { receiptFileName, receiptRows } from '../lib/receipt';
+import { receiptHtml, receiptRows } from '../lib/receipt';
 
-const downloadReceipt = vi.fn(async (_o: unknown) => true);
-vi.mock('../lib/receipt', async (orig) => ({ ...(await orig<typeof import('../lib/receipt')>()), downloadReceipt: (o: unknown) => downloadReceipt(o as never) }));
+const printReceipt = vi.fn((_o: unknown) => true);
+vi.mock('../lib/receipt', async (orig) => ({ ...(await orig<typeof import('../lib/receipt')>()), printReceipt: (o: unknown) => printReceipt(o as never) }));
 
 const SETTINGS = http.get(`${API}/settings`, () => HttpResponse.json({ data: { flavours: [], locations: ['DHA'], addons: [] } }));
 
@@ -23,11 +23,16 @@ describe('pageList', () => {
 });
 
 describe('receipt', () => {
-  it('lists the order details and names the file after the order number', () => {
+  it('lists order details and creates a compact branded thermal receipt', () => {
     const o = order(1, { addons: ['Candles'], location: 'DHA', source: 'whatsapp' });
     const rows = Object.fromEntries(receiptRows(o));
     expect(rows).toMatchObject({ Order: '#OD-1001', Cake: 'Cake 1', 'Add-ons': 'Candles', Location: 'DHA', 'Ordered via': 'WhatsApp', Weight: '2 lb' });
-    expect(receiptFileName(o)).toBe('receipt-OD-1001.png');
+    const html = receiptHtml(o);
+    expect(html).toContain('@page{size:80mm auto');
+    expect(html).toContain('Blusher Cakes');
+    expect(html).toContain('Developed by Tech Riyawat');
+    expect(html).toContain('tanawishalrai5271@gmail.com');
+    expect(html).not.toContain('03067251356');
     expect(Object.keys(Object.fromEntries(receiptRows(order(2))))).not.toContain('Add-ons');
   });
 });
@@ -60,16 +65,16 @@ describe('Orders page', () => {
     expect(screen.queryByTestId('pager')).not.toBeInTheDocument();
   });
 
-  it('does not offer a status reactivation action for delivered orders', async () => {
+  it('allows status changes for delivered orders', async () => {
     const delivered = order(4, { id: 'delivered-4', status: 'delivered' });
     server.use(SETTINGS, http.get(`${API}/orders`, () => HttpResponse.json(list([delivered]))));
     renderApp(<OrdersPage mode="all" />);
     const card = await screen.findByTestId('order-delivered-4');
     expect(within(card).getByTestId('order-status')).toHaveTextContent('Delivered');
-    expect(within(card).queryByTestId('order-mark')).not.toBeInTheDocument();
+    expect(within(card).getByTestId('order-mark')).toHaveTextContent('Mark Pending');
   });
 
-  it('View opens every detail, and the receipt button downloads it', async () => {
+  it('View opens every detail, and the receipt button opens print', async () => {
     const o = order(5, { id: 'o5', addons: ['Toppers'], location: 'Gulberg', source: 'instagram', advance: 1000, balance: 4000, price: 5000, details: 'Name: Aiza', imageCount: 1 });
     server.use(SETTINGS,
       http.get(`${API}/orders`, () => HttpResponse.json(list([o]))),
@@ -85,7 +90,7 @@ describe('Orders page', () => {
     expect(within(v).getByTestId('view-balance')).toHaveTextContent('Rs 4,000');
     expect(await within(v).findByAltText('Reference cake')).toBeInTheDocument();
     await userEvent.click(within(v).getByTestId('view-receipt'));
-    await waitFor(() => expect(downloadReceipt).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(printReceipt).toHaveBeenCalledTimes(1));
     await userEvent.click(within(v).getByTestId('view-close'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
