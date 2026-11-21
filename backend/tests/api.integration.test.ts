@@ -302,7 +302,7 @@ suite('Order Desk API integration', () => {
       const stale = await patch(`/orders/${c.id}`).set('If-Match', '1').send({ cake: 'x' });
       expect(stale.status).toBe(412); expect(stale.body.error.code).toBe('VERSION_CONFLICT');
     });
-    it('status flow pending -> ready -> delivered sets deliveredAt and zeroes the balance; going back clears it', async () => {
+    it('status flow pending -> ready -> delivered is terminal', async () => {
       const c = (await create({ price: 3000, advance: 500 })).body.data;
       const ready = await patch(`/orders/${c.id}/status`).send({ status: 'ready' });
       expect(ready.body.data).toMatchObject({ status: 'ready', balance: 2500 });
@@ -310,7 +310,10 @@ suite('Order Desk API integration', () => {
       expect(done.body.data).toMatchObject({ status: 'delivered', balance: 0 });
       expect(done.body.data.deliveredAt).toBeTruthy();
       const back = await patch(`/orders/${c.id}/status`).send({ status: 'pending' });
-      expect(back.body.data.deliveredAt).toBeUndefined(); expect(back.body.data.balance).toBe(2500);
+      expect(back.status).toBe(400);
+      expect((await get(`/orders/${c.id}`)).body.data).toMatchObject({ status: 'delivered', balance: 0 });
+      const editBack = await patch(`/orders/${c.id}`).send({ status: 'ready' });
+      expect(editBack.status).toBe(400);
       expect((await patch(`/orders/${c.id}/status`).send({ status: 'lost' })).status).toBe(422);
     });
     it('DELETE is a soft delete: 204, then 404 and gone from the list', async () => {

@@ -71,9 +71,11 @@ export function OrderCard({ o }: { o: OrderDTO }) {
       </div>
       <div className="acts">
         <button type="button" data-testid="order-view" onClick={() => setView(true)}>View</button>
-        <button type="button" data-testid="order-mark" disabled={status.isPending} onClick={() => status.mutate({ id: o.id, status: next }, { onError: (e) => toast(apiError(e).message, 'error') })}>
-          Mark {STATUS_LABEL[next]}
-        </button>
+        {o.status !== 'delivered' && (
+          <button type="button" data-testid="order-mark" disabled={status.isPending} onClick={() => status.mutate({ id: o.id, status: next }, { onError: (e) => toast(apiError(e).message, 'error') })}>
+            Mark {STATUS_LABEL[next]}
+          </button>
+        )}
         <button type="button" data-testid="order-edit" onClick={() => nav(`/edit/${o.id}`)}>Edit</button>
         {ph && <a href={`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
         <button type="button" className="del" data-testid="order-delete" onClick={askDelete}>{sure ? 'Sure?' : 'Delete'}</button>

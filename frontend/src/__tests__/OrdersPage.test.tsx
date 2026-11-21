@@ -60,6 +60,15 @@ describe('Orders page', () => {
     expect(screen.queryByTestId('pager')).not.toBeInTheDocument();
   });
 
+  it('does not offer a status reactivation action for delivered orders', async () => {
+    const delivered = order(4, { id: 'delivered-4', status: 'delivered' });
+    server.use(SETTINGS, http.get(`${API}/orders`, () => HttpResponse.json(list([delivered]))));
+    renderApp(<OrdersPage mode="all" />);
+    const card = await screen.findByTestId('order-delivered-4');
+    expect(within(card).getByTestId('order-status')).toHaveTextContent('Delivered');
+    expect(within(card).queryByTestId('order-mark')).not.toBeInTheDocument();
+  });
+
   it('View opens every detail, and the receipt button downloads it', async () => {
     const o = order(5, { id: 'o5', addons: ['Toppers'], location: 'Gulberg', source: 'instagram', advance: 1000, balance: 4000, price: 5000, details: 'Name: Aiza', imageCount: 1 });
     server.use(SETTINGS,
